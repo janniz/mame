@@ -1392,7 +1392,10 @@ void invasion_state::io_map(address_map &map)
 
 
 static INPUT_PORTS_START( invasion )
-	// DIP switch defaults confirmed from manual
+	// * DIP switch defaults confirmed from manual.
+	// * Tilt/slam switch causes a watchdog reset - it isn't handled in software.
+	// * Coin counter is driven by logic connected to the coin inputs, not software.
+	// * The code supports cocktail cabinets, but Sidam apparently made no boards with the necessary inputs/outputs.
 	PORT_START("IN0")
 	PORT_DIPUNUSED_DIPLOC( 0x01, 0x00, "SW1:8" )
 	PORT_DIPUNUSED_DIPLOC( 0x02, 0x00, "SW1:7" )
@@ -1405,7 +1408,7 @@ static INPUT_PORTS_START( invasion )
 	PORT_BIT( 0x01, IP_ACTIVE_LOW,  IPT_COIN1 )
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_START2 )
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_START1 )
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNKNOWN ) // ???
+	PORT_BIT( 0x08, IP_ACTIVE_LOW,  IPT_UNKNOWN ) // pulled high via a 1k resistor
 	PORT_BIT( 0x70, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(invaders_state, invaders_in1_control_r)
 	PORT_BIT( 0x80, IP_ACTIVE_LOW,  IPT_COIN2 )
 
@@ -1415,7 +1418,7 @@ static INPUT_PORTS_START( invasion )
 	PORT_DIPSETTING(    0x01, "4" )
 	PORT_DIPSETTING(    0x02, "5" )
 	PORT_DIPSETTING(    0x03, "6" )
-	PORT_BIT( 0x04, IP_ACTIVE_LOW,  IPT_UNUSED ) // ???
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED ) // tied to ground
 	PORT_DIPNAME( 0x08, 0x00, DEF_STR( Bonus_Life ) )   PORT_DIPLOCATION("SW1:2")
 	PORT_DIPSETTING(    0x08, "1500" )
 	PORT_DIPSETTING(    0x00, "2500" )
@@ -1444,7 +1447,7 @@ static INPUT_PORTS_START( invasion )
 	PORT_CONFNAME( 0x04, 0x04, "Coin counter" )
 	PORT_CONFSETTING(    0x00, "Disconnected" )
 	PORT_CONFSETTING(    0x04, "Connected" )
-	PORT_BIT( 0xf9, IP_ACTIVE_LOW,  IPT_UNUSED )
+	PORT_BIT( 0xf9, IP_ACTIVE_LOW,  IPT_UNUSED ) // these bits all go to unpopulated RRC networks
 
 	// P1 controls (connected to IN0, IN1 and IN2)
 	INVADERS_CONTROL_PORT_P1
@@ -1457,7 +1460,7 @@ void invasion_state::invasion(machine_config &config)
 	// basic machine hardware
 	m_maincpu->set_addrmap(AS_IO, &invasion_state::io_map);
 
-	// 60 Hz signal clocks two 'LS161s, terminal count output will reset game
+	// 60 Hz signal clocks two cascaded 'LS161s, terminal count output resets the CPU
 	WATCHDOG_TIMER(config, m_watchdog).set_vblank_count("screen", 255);
 
 	// video hardware
